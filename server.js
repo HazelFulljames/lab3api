@@ -1,24 +1,19 @@
+import {createServer} from 'node:http';
+import messages from './lang/en/en.js';
+
 class Server {
     constructor() {
-        this.http = require('http');
-        this.url = require('url');
-        this.utils = require('./modules/utils');
-        this.messages = require('./lang/en/en');
 
-        this.PORT = 3000;
-        this.HOSTNAME = 'localhost';
-
-        this.server = this.http.createServer((req, res) => {
+        this.server = createServer((req, res) => {
             // Parse
-            const parsedUrl = this.url.parse(req.url, true);
-            const pathname = parsedUrl.pathname;
-            const query = parsedUrl.query;
+            const parsedUrl = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
-            if (pathname === '/getDate') {
-                const name = query.name || 'Guest';
-                const currentDateTime = this.utils.getDate();
-                
-                const greetingMessage = `<p style="color: blue;">${this.messages.GREETING} ${name}, ${this.messages.MESSAGE} ${currentDateTime}</p>`;
+
+            if (req.method === 'GET' && parsedUrl.pathname === '/getDate') {
+                const name = parsedUrl.searchParams.get('name') || 'Guest';
+                const currentDateTime = new Date().toLocaleString();
+
+                const greetingMessage = `<p style="color: blue;">${messages.GREETING} ${name}, ${messages.MESSAGE} ${currentDateTime}</p>`;
                 
                 res.writeHead(200);
                 res.end(greetingMessage);
@@ -26,13 +21,12 @@ class Server {
                 res.writeHead(404);
                 res.end('<p style="color: red;">404 - Endpoint not found</p>');
             }
+            
         });
     }
 
     startServer() {
-        this.server.listen(this.PORT, this.HOSTNAME, () => {
-            console.log(`Server running at http://${this.HOSTNAME}:${this.PORT}/`);
-        });
+        this.server.listen(3000);
     }
 }
 
